@@ -1,10 +1,10 @@
 # gitbucket-githooks-plugin
 
-A GitBucket plugin that enables a limited set of `~/.git/hooks`. 
+A [GitBucket](https://github.com/gitbucket/gitbucket) plugin that enables a limited set of [`~/.git/hooks`](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks). [See which hooks are currently supported](#supported-hooks).
 
 ## Usage
 
-This GitBucket plugin is intended to be a one-and-done solution for enabling support for the [built-in hook functionality in Git](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks). 
+This [GitBucket](https://github.com/gitbucket/gitbucket) plugin is intended to be a one-and-done solution for enabling support for the [built-in hook functionality in Git](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks).
 
 To begin using the plugin:
 
@@ -41,10 +41,10 @@ Here is an example `post-receive` hook:
 ```bash
 #!C:/Program Files/Git/usr/bin/sh.exe
 
-#   author: Marshal Hayes 
+#   author: Marshal Hayes
 #
 #   Available environment variables:
-# 
+#
 #       $OWNER              : String        the owner of the repository
 #       $REPOSITORY_DIR     : String        the location of the repository on the remote
 #       $REPOSITORY_NAME    : String        the name of the repository
@@ -65,7 +65,7 @@ fi
 
 ## Building from Source
 
-Installation from source is also an option when installing this plugin. 
+Installation from source is also an option when installing this plugin.
 To build from source, ensure the following are true first:
 
 - Java is installed [jdk.java.net/14](https://jdk.java.net/14/)
@@ -80,6 +80,6 @@ Execute `sbt package` to package the source into a `.jar` file
 
 This plugin *can* be dangerous if used improperly. But my thought is: if someone has access to place files directly on your server, then they clearly know what they're doing and so does the person who gave them access.
 
-Keep in mind that the Git hooks are executable scripts and can perform essentially any action if given the proper access. Think `sudo rm -rf /` ... I can only imagine what that would do to your server. 
+Keep in mind that the Git hooks are executable scripts and can perform essentially any action if given the proper access. Think `sudo rm -rf /` ... I can only imagine what that would do to your server.
 
 **To limit actions available in the script, look into limiting the user that is running the server.**
