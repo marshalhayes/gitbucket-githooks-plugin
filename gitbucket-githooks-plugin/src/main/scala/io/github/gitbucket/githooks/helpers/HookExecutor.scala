@@ -20,16 +20,9 @@ import java.{util => ju}
 
 object HookExecutor {
   def executeHooks(
-      hook: String,
-      owner: String,
-      repositoryName: String,
-      branchName: String,
-      sha: String,
-      commitMessage: String,
-      commitUserName: String,
-      pusher: String,
-      repositoryDir: String,
-      config: org.eclipse.jgit.lib.Config
+      hook: String, owner: String, repositoryName: String, branchName: String,
+      sha: String, commitMessage: String, commitUserName: String,
+      pusher: String, repositoryDir: String, config: org.eclipse.jgit.lib.Config
   ): Option[String] = {
     var exitValue: Option[String] = Some("0")
 
@@ -50,7 +43,7 @@ object HookExecutor {
       var shebang: String = ""
 
       Using.resource(
-        new BufferedReader(new FileReader(pathToHookScript.toString()))
+          new BufferedReader(new FileReader(pathToHookScript.toString()))
       ) { reader =>
         shebang = reader.readLine()
 
@@ -63,8 +56,8 @@ object HookExecutor {
         var processBuilder: ProcessBuilder = null;
 
         if (shebang.length() > 0) {
-          processBuilder =
-            new ProcessBuilder(shebang, pathToHookScript.toString())
+          processBuilder = new ProcessBuilder(shebang,
+              pathToHookScript.toString())
         } else {
           processBuilder = new ProcessBuilder(pathToHookScript.toString())
         }
