@@ -17,41 +17,76 @@ import java.nio.file.{Files, Paths}
 
 import io.github.gitbucket.githook.helpers.HookExecutor
 
-/*
+/**
+ * Tie into GitBucket's ReceiveHook class.
+ * On post-receive, determine whether we need to execute the .git/hooks/post-receive hook.
+ * The script will only execute if the ReceiveCommand.Result was successful (see http://download.eclipse.org/jgit/docs/jgit-2.0.0.201206130900-r/apidocs/org/eclipse/jgit/transport/ReceiveCommand.Result.html#OK)
+ */
+class CommitHook
+    extends ReceiveHook with RepositoryService with AccountService
+    with CommitStatusService with SystemSettingsService {
 
-    Tie into GitBucket's ReceiveHook class.
+  override def preReceive(owner: String, repository: String,
+      receivePack: ReceivePack, command: ReceiveCommand, pusher: String)(
+      implicit session: Session): Option[String] = {
+    val branch        = command.getRefName.stripPrefix("refs/heads/")
+    val repositoryDir = getRepositoryDir(owner, repository)
 
-    On post-receive, determine whether we need to execute the .git/hooks/post-receive hook. 
-    The script will only execute if the ReceiveCommand.Result was successful (see http://download.eclipse.org/jgit/docs/jgit-2.0.0.201206130900-r/apidocs/org/eclipse/jgit/transport/ReceiveCommand.Result.html#OK)
+    if (branch != command.getRefName && command.getType != ReceiveCommand.Type.DELETE) {
+      getRepository(owner, repository).foreach { repositoryInfo =>
+        Using.resource(Git.open(getRepositoryDir(owner, repository))) { git =>
+          val sha       = command.getNewId.name
+          val revCommit = JGitUtil.getRevCommitFromId(git, command.getNewId)
 
-*/
-class CommitHook extends ReceiveHook with RepositoryService with AccountService with CommitStatusService with SystemSettingsService {
-    override def postReceive(owner: String, repository: String, receivePack: ReceivePack, command: ReceiveCommand, pusher: String)(implicit session: Session): Unit = {
-        val branch = command.getRefName.stripPrefix("refs/heads/")
-        val repositoryDir = getRepositoryDir(owner, repository)
+          val config = git.getRepository().getConfig()
 
-        if (branch != command.getRefName && command.getType != ReceiveCommand.Type.DELETE) {
-            getRepository(owner, repository).foreach { repositoryInfo => 
-                Using.resource(Git.open(getRepositoryDir(owner, repository))) { git => 
-                    val sha = command.getNewId.name 
-                    val revCommit = JGitUtil.getRevCommitFromId(git, command.getNewId)
-
-                    val config = git.getRepository().getConfig()
-
-                    HookExecutor.executeHooks(
-                        hook = "post-receive",
-                        owner = owner, 
-                        repositoryName = repository, 
-                        branchName = branch, 
-                        sha = sha, 
-                        commitMessage = revCommit.getShortMessage,
-                        commitUserName = revCommit.getCommitterIdent.getName, 
-                        pusher = pusher,
-                        repositoryDir = repositoryDir.getAbsolutePath().toString(),
-                        config = config
-                    )
-                }
-            }
+          return HookExecutor.executeHooks(
+              hook = "pre-receive",
+              owner = owner,
+              repositoryName = repository,
+              branchName = branch,
+              sha = sha,
+              commitMessage = revCommit.getShortMessage,
+              commitUserName = revCommit.getCommitterIdent.getName,
+              pusher = pusher,
+              repositoryDir = repositoryDir.getAbsolutePath().toString(),
+              config = config
+          )
         }
+      }
     }
+
+    return None
+  }
+
+  override def postReceive(owner: String, repository: String,
+      receivePack: ReceivePack, command: ReceiveCommand, pusher: String)(
+      implicit session: Session): Unit = {
+    val branch        = command.getRefName.stripPrefix("refs/heads/")
+    val repositoryDir = getRepositoryDir(owner, repository)
+
+    if (branch != command.getRefName && command.getType != ReceiveCommand.Type.DELETE) {
+      getRepository(owner, repository).foreach { repositoryInfo =>
+        Using.resource(Git.open(getRepositoryDir(owner, repository))) { git =>
+          val sha       = command.getNewId.name
+          val revCommit = JGitUtil.getRevCommitFromId(git, command.getNewId)
+
+          val config = git.getRepository().getConfig()
+
+          HookExecutor.executeHooks(
+              hook = "post-receive",
+              owner = owner,
+              repositoryName = repository,
+              branchName = branch,
+              sha = sha,
+              commitMessage = revCommit.getShortMessage,
+              commitUserName = revCommit.getCommitterIdent.getName,
+              pusher = pusher,
+              repositoryDir = repositoryDir.getAbsolutePath().toString(),
+              config = config
+          )
+        }
+      }
+    }
+  }
 }

@@ -20,45 +20,57 @@ import java.nio.file.{Files, Paths}
 
 import io.github.gitbucket.githook.helpers.HookExecutor
 
-class PRHook extends PullRequestHook
-  with PullRequestService with IssuesService with CommitsService with AccountService with WebHookService
-  with WebHookPullRequestService with WebHookPullRequestReviewCommentService with ActivityService with MergeService
-  with RepositoryService with LabelsService with PrioritiesService with MilestonesService {
-    override def merged(issue: Issue, repository: RepositoryInfo)(implicit session: Session, context: Context): Unit = {
-        if (issue.isPullRequest) {
-            var (_, pullRequest) = getPullRequest(issue.userName, issue.repositoryName, issue.issueId).getOrElse((null, null))
+class PRHook
+    extends PullRequestHook with PullRequestService with IssuesService
+    with CommitsService with AccountService with WebHookService
+    with WebHookPullRequestService with WebHookPullRequestReviewCommentService
+    with ActivityService with MergeService with RepositoryService
+    with LabelsService with PrioritiesService with MilestonesService {
 
-            val prRepositoryDir = getRepositoryDir(pullRequest.requestUserName, pullRequest.requestRepositoryName)
+  override def merged(issue: Issue, repository: RepositoryInfo)(
+      implicit session: Session, context: Context): Unit = {
+    if (issue.isPullRequest) {
+      var (_, pullRequest) =
+        getPullRequest(issue.userName, issue.repositoryName, issue.issueId)
+          .getOrElse((null, null))
 
-            var config : org.eclipse.jgit.lib.StoredConfig = null
-            var sha : String = null
+      val prRepositoryDir = getRepositoryDir(
+          pullRequest.requestUserName,
+          pullRequest.requestRepositoryName
+      )
 
-            val revCommit = Using.resource(Git.open(prRepositoryDir)) { git => 
-                val repo = git.getRepository()
-                val id = repo.resolve(pullRequest.commitIdTo)
+      var config: org.eclipse.jgit.lib.StoredConfig = null
+      var sha: String                               = null
 
-                config = repo.getConfig()
-                sha = repo.resolve(pullRequest.branch).name
+      val revCommit = Using.resource(Git.open(prRepositoryDir)) { git =>
+        val repo = git.getRepository()
+        val id   = repo.resolve(pullRequest.commitIdTo)
 
-                JGitUtil.getRevCommitFromId(git, id)
-            }
+        config = repo.getConfig()
+        sha = repo.resolve(pullRequest.branch).name
 
-            var currentLoggedInAccount : gitbucket.core.model.Account = context.loginAccount.getOrElse(null)
+        JGitUtil.getRevCommitFromId(git, id)
+      }
 
-            val pusher = if (currentLoggedInAccount != null) currentLoggedInAccount.userName else ""
+      var currentLoggedInAccount: gitbucket.core.model.Account =
+        context.loginAccount.getOrElse(null)
 
-            HookExecutor.executeHooks(
-                hook = "post-receive",
-                owner = repository.owner,
-                repositoryName = pullRequest.repositoryName,
-                branchName = pullRequest.branch,
-                sha = sha,
-                commitMessage = revCommit.getShortMessage,
-                commitUserName = revCommit.getCommitterIdent.getName,
-                pusher = pusher,
-                repositoryDir = prRepositoryDir.getAbsolutePath().toString(),
-                config = config
-            )
-        }
+      val pusher =
+        if (currentLoggedInAccount != null) currentLoggedInAccount.userName
+        else ""
+
+      HookExecutor.executeHooks(
+          hook = "post-receive",
+          owner = repository.owner,
+          repositoryName = pullRequest.repositoryName,
+          branchName = pullRequest.branch,
+          sha = sha,
+          commitMessage = revCommit.getShortMessage,
+          commitUserName = revCommit.getCommitterIdent.getName,
+          pusher = pusher,
+          repositoryDir = prRepositoryDir.getAbsolutePath().toString(),
+          config = config
+      )
     }
+  }
 }

@@ -14,68 +14,95 @@ import profile.blockingApi._
 
 import java.io.{File, FileReader, BufferedReader}
 import java.nio.file.{Files, Paths}
+import java.util.concurrent.TimeUnit
+import java.sql.Time
+import java.{util => ju}
 
 object HookExecutor {
-    def executeHooks(hook: String, owner: String, repositoryName: String, branchName: String, sha: String, commitMessage: String, commitUserName: String, pusher: String, repositoryDir: String, config: org.eclipse.jgit.lib.Config) {
-            val CONFIG_CORE_KEY = org.eclipse.jgit.lib.ConfigConstants.CONFIG_CORE_SECTION
-            val HOOKS_PATH_KEY  = org.eclipse.jgit.lib.ConfigConstants.CONFIG_KEY_HOOKS_PATH
-            
-            var hooksPath = config.getString(CONFIG_CORE_KEY, null, HOOKS_PATH_KEY)
+  def executeHooks(
+      hook: String,
+      owner: String,
+      repositoryName: String,
+      branchName: String,
+      sha: String,
+      commitMessage: String,
+      commitUserName: String,
+      pusher: String,
+      repositoryDir: String,
+      config: org.eclipse.jgit.lib.Config
+  ): Option[String] = {
+    var exitValue: Option[String] = Some("0")
 
-            if (hooksPath == null) {
-                hooksPath = Paths.get(repositoryDir, "hooks").toString()
-            }
+    val CONFIG_CORE_KEY =
+      org.eclipse.jgit.lib.ConfigConstants.CONFIG_CORE_SECTION
+    val HOOKS_PATH_KEY =
+      org.eclipse.jgit.lib.ConfigConstants.CONFIG_KEY_HOOKS_PATH
 
-            val pathToHookScript = Paths.get(hooksPath, hook).toAbsolutePath()
+    var hooksPath = config.getString(CONFIG_CORE_KEY, null, HOOKS_PATH_KEY)
 
-            if (Files.exists(pathToHookScript)) {
-                var shebang : String = ""
+    if (hooksPath == null) {
+      hooksPath = Paths.get(repositoryDir, "hooks").toString()
+    }
 
-                Using.resource(new BufferedReader(new FileReader(pathToHookScript.toString()))) { reader => 
-                    shebang = reader.readLine()
+    val pathToHookScript = Paths.get(hooksPath, hook).toAbsolutePath()
 
-                    if (shebang != null && shebang.length() > 2) {
-                        shebang = shebang.substring(2, shebang.length())
-                    }
-                }
+    if (Files.exists(pathToHookScript)) {
+      var shebang: String = ""
 
-                try {
-                    var processBuilder : ProcessBuilder = null;
+      Using.resource(
+        new BufferedReader(new FileReader(pathToHookScript.toString()))
+      ) { reader =>
+        shebang = reader.readLine()
 
-                    if (shebang.length() > 0) {
-                        processBuilder = new ProcessBuilder(shebang, pathToHookScript.toString())
-                    } else {
-                        processBuilder = new ProcessBuilder(pathToHookScript.toString())
-                    }
-
-                    if (processBuilder != null) {
-                        // Add variables in the scope of the hook script
-                        val environment = processBuilder.environment()
-
-                        environment.put("OWNER", owner)
-                        environment.put("REPOSITORY_NAME", repositoryName)
-                        environment.put("REPOSITORY_DIR", repositoryDir)
-                        environment.put("BRANCH_NAME", branchName)
-                        environment.put("SHA", sha)
-                        environment.put("COMMIT_MESSAGE", commitMessage)
-                        environment.put("COMMIT_USERNAME", commitUserName)
-                        environment.put("PUSHER", pusher)
-
-                        // Set the working directory the remote repository
-                        processBuilder.directory(new File(repositoryDir))
-
-                        val outputPath = Paths.get(hooksPath, "output")
-                        val outputFile = outputPath.toFile()
-
-                        processBuilder.redirectError(outputFile)
-                        processBuilder.redirectOutput(outputFile)
-
-                        val runner = processBuilder.start()
-                    }
-                }
-                catch {
-                    case e: Exception => e.printStackTrace()
-                }
-            }
+        if (shebang != null && shebang.length() > 2) {
+          shebang = shebang.substring(2, shebang.length())
         }
+      }
+
+      try {
+        var processBuilder: ProcessBuilder = null;
+
+        if (shebang.length() > 0) {
+          processBuilder =
+            new ProcessBuilder(shebang, pathToHookScript.toString())
+        } else {
+          processBuilder = new ProcessBuilder(pathToHookScript.toString())
+        }
+
+        if (processBuilder != null) {
+          // Add variables in the scope of the hook script
+          val environment = processBuilder.environment()
+
+          environment.put("OWNER", owner)
+          environment.put("REPOSITORY_NAME", repositoryName)
+          environment.put("REPOSITORY_DIR", repositoryDir)
+          environment.put("BRANCH_NAME", branchName)
+          environment.put("SHA", sha)
+          environment.put("COMMIT_MESSAGE", commitMessage)
+          environment.put("COMMIT_USERNAME", commitUserName)
+          environment.put("PUSHER", pusher)
+
+          // Set the working directory the remote repository
+          processBuilder.directory(new File(repositoryDir))
+
+          val outputPath = Paths.get(hooksPath, "output")
+          val outputFile = outputPath.toFile()
+
+          processBuilder.redirectError(outputFile)
+          processBuilder.redirectOutput(outputFile)
+
+          val runner = processBuilder.start()
+
+          // Wait indefinitely for the process to finish
+          runner.waitFor()
+
+          exitValue = Some(runner.exitValue.toString())
+        }
+      } catch {
+        case e: Exception => e.printStackTrace()
+      }
+    }
+
+    return exitValue
+  }
 }
