@@ -38,7 +38,7 @@ class CommitHook extends ReceiveHook with RepositoryService with AccountService 
 
                     val config = git.getRepository().getConfig()
 
-                    HookExecutor.executeHooks(
+                    HookExecutor.executeHook(
                         hook = "post-receive",
                         owner = owner, 
                         repositoryName = repository, 

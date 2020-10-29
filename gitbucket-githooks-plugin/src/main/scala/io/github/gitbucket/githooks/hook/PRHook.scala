@@ -47,7 +47,7 @@ class PRHook extends PullRequestHook
 
             val pusher = if (currentLoggedInAccount != null) currentLoggedInAccount.userName else ""
 
-            HookExecutor.executeHooks(
+            HookExecutor.executeHook(
                 hook = "post-receive",
                 owner = repository.owner,
                 repositoryName = pullRequest.repositoryName,

@@ -16,7 +16,7 @@ import java.io.{File, FileReader, BufferedReader}
 import java.nio.file.{Files, Paths}
 
 object HookExecutor {
-    def executeHooks(hook: String, owner: String, repositoryName: String, branchName: String, sha: String, commitMessage: String, commitUserName: String, pusher: String, repositoryDir: String, config: org.eclipse.jgit.lib.Config) {
+    def executeHook(hook: String, owner: String, repositoryName: String, branchName: String, sha: String, commitMessage: String, commitUserName: String, pusher: String, repositoryDir: String, config: org.eclipse.jgit.lib.Config) {
             val CONFIG_CORE_KEY = org.eclipse.jgit.lib.ConfigConstants.CONFIG_CORE_SECTION
             val HOOKS_PATH_KEY  = org.eclipse.jgit.lib.ConfigConstants.CONFIG_KEY_HOOKS_PATH
             
