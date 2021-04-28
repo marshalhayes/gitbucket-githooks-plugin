@@ -83,3 +83,11 @@ This plugin *can* be dangerous if used improperly. But my thought is: if someone
 Keep in mind that the Git hooks are executable scripts and can perform essentially any action if given the proper access. Think `sudo rm -rf /` ... I can only imagine what that would do to your server.
 
 **To limit actions available in the script, look into limiting the user that is running the server.**
+
+## Versions Table
+
+Plugin version | GitBucket version
+:--------------|:--------------------
+1.1.0          | 4.35.x
+1.0.0          | 4.33.x
+

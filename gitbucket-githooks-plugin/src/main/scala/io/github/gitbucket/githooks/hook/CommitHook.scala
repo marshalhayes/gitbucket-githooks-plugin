@@ -26,7 +26,7 @@ import io.github.gitbucket.githook.helpers.HookExecutor
 
 */
 class CommitHook extends ReceiveHook with RepositoryService with AccountService with CommitStatusService with SystemSettingsService {
-    override def postReceive(owner: String, repository: String, receivePack: ReceivePack, command: ReceiveCommand, pusher: String)(implicit session: Session): Unit = {
+    override def postReceive(owner: String, repository: String, receivePack: ReceivePack, command: ReceiveCommand, pusher: String, mergePullRequest: Boolean)(implicit session: Session): Unit = {
         val branch = command.getRefName.stripPrefix("refs/heads/")
         val repositoryDir = getRepositoryDir(owner, repository)
 

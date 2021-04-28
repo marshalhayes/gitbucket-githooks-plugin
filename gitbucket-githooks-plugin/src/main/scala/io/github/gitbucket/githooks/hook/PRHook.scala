@@ -22,7 +22,7 @@ import io.github.gitbucket.githook.helpers.HookExecutor
 
 class PRHook extends PullRequestHook
   with PullRequestService with IssuesService with CommitsService with AccountService with WebHookService
-  with WebHookPullRequestService with WebHookPullRequestReviewCommentService with ActivityService with MergeService
+  with WebHookPullRequestService with WebHookPullRequestReviewCommentService with ActivityService with RequestCache with MergeService
   with RepositoryService with LabelsService with PrioritiesService with MilestonesService {
     override def merged(issue: Issue, repository: RepositoryInfo)(implicit session: Session, context: Context): Unit = {
         if (issue.isPullRequest) {
