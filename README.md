@@ -12,7 +12,7 @@ To begin using the plugin:
 2. Install in the `$GITBUCKET_HOME/plugins` directory
 3. Restart GitBucket
 4. (Optional) Create your hook executable if you haven't already. Keep it somewhere handy for reference later.
-5. Place a *[supported hook](#supported-hooks)* in the bare repository on the server where GitBucket is running. This should be under `<repo_path>/.git/hooks/` unless you configured a different one.
+5. Place a _[supported hook](#supported-hooks)_ in the bare repository on the server where GitBucket is running. This should be under `<repo_path>/.git/hooks/` unless you configured a different one.
 
 <h2 id="supported-hooks">Supported Hooks</h2>
 
@@ -24,15 +24,15 @@ Only a limited set of Git hooks are available in the latest release. These inclu
 
 The environment variables exposed to the scripts are:
 
-| Variable		| Description				|
-| ------------- 	| ------------- 			|
-| OWNER			| the owner of the repository		|
-| REPOSITORY_NAME	| the name of the repository		|
-| BRANCH_NAME		| the branch name being committed	|
-| SHA			| the hash of the commit		|
-| COMMIT_MESSAGE	| the commit message			|
-| COMMIT_USERNAME	| the username of the committer		|
-| PUSHER		| the pusher				|
+| Variable        | Description                     |
+| --------------- | ------------------------------- |
+| OWNER           | the owner of the repository     |
+| REPOSITORY_NAME | the name of the repository      |
+| BRANCH_NAME     | the branch name being committed |
+| SHA             | the hash of the commit          |
+| COMMIT_MESSAGE  | the commit message              |
+| COMMIT_USERNAME | the username of the committer   |
+| PUSHER          | the pusher                      |
 
 The script is executed from the root directory of the remote repository. In other words, the working directory is: `$GITBUCKET_HOME/repositories/{owner}/{repositoryName}.git/`.
 
@@ -78,7 +78,7 @@ Execute `sbt package` to package the source into a `.jar` file
 
 ## Security Concerns
 
-This plugin *can* be dangerous if used improperly. But my thought is: if someone has access to place files directly on your server, then they clearly know what they're doing and so does the person who gave them access.
+This plugin _can_ be dangerous if used improperly. But my thought is: if someone has access to place files directly on your server, then they clearly know what they're doing and so does the person who gave them access.
 
 Keep in mind that the Git hooks are executable scripts and can perform essentially any action if given the proper access. Think `sudo rm -rf /` ... I can only imagine what that would do to your server.
 
@@ -86,8 +86,7 @@ Keep in mind that the Git hooks are executable scripts and can perform essential
 
 ## Versions Table
 
-Plugin version | GitBucket version
-:--------------|:--------------------
-1.1.0          | 4.35.x
-1.0.0          | 4.33.x
-
+| Plugin version | GitBucket version |
+| :------------- | :---------------- |
+| 1.1.0          | 4.35.x            |
+| 1.0.0          | 4.33.x            |
