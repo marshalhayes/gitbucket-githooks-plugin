@@ -77,16 +77,16 @@ object HookExecutor {
           environment.put("COMMIT_USERNAME", commitUserName)
           environment.put("PUSHER", pusher)
 
-          // Set the working directory the remote repository
+          // Set the working directory to the remote repository
           processBuilder.directory(new File(repositoryDir))
 
           val outputPath = Paths.get(hooksPath, "output")
           val outputFile = outputPath.toFile()
 
-          processBuilder.redirectError(outputFile)
-          processBuilder.redirectOutput(outputFile)
+          processBuilder.redirectErrorStream(true);
+          processBuilder.redirectOutput(outputFile);
 
-          val runner = processBuilder.start()
+          processBuilder.start()
         }
       } catch {
         case e: Exception => e.printStackTrace()
