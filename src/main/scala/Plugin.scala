@@ -8,12 +8,13 @@ class Plugin extends gitbucket.core.plugin.Plugin {
 
   override val description: String =
     "A plugin that enables the existing .git/hooks functionality."
-  override val versions: List[Version] = List(new Version("0.1.1"))
+  override val versions: List[Version] = List(
+    new Version("1.0.0"),
+    new Version("1.1.0"),
+    new Version("1.1.1")
+  )
 
   override val receiveHooks: Seq[ReceiveHook] = Seq(
     new io.github.gitbucket.githook.hook.CommitHook()
-  )
-  override val pullRequestHooks: Seq[PullRequestHook] = Seq(
-    new io.github.gitbucket.githook.hook.PRHook()
   )
 }

@@ -14,18 +14,20 @@ import profile.blockingApi._
 
 import java.io.{File, FileReader, BufferedReader}
 import java.nio.file.{Files, Paths}
-import java.util.concurrent.TimeUnit
-import java.sql.Time
-import java.{util => ju}
 
 object HookExecutor {
-  def executeHooks(
-      hook: String, owner: String, repositoryName: String, branchName: String,
-      sha: String, commitMessage: String, commitUserName: String,
-      pusher: String, repositoryDir: String, config: org.eclipse.jgit.lib.Config
-  ): Option[String] = {
-    var exitValue: Option[String] = Some("0")
-
+  def executeHook(
+      hook: String,
+      owner: String,
+      repositoryName: String,
+      branchName: String,
+      sha: String,
+      commitMessage: String,
+      commitUserName: String,
+      pusher: String,
+      repositoryDir: String,
+      config: org.eclipse.jgit.lib.Config
+  ): Unit = {
     val CONFIG_CORE_KEY =
       org.eclipse.jgit.lib.ConfigConstants.CONFIG_CORE_SECTION
     val HOOKS_PATH_KEY =
@@ -43,7 +45,7 @@ object HookExecutor {
       var shebang: String = ""
 
       Using.resource(
-          new BufferedReader(new FileReader(pathToHookScript.toString()))
+        new BufferedReader(new FileReader(pathToHookScript.toString()))
       ) { reader =>
         shebang = reader.readLine()
 
@@ -56,8 +58,8 @@ object HookExecutor {
         var processBuilder: ProcessBuilder = null;
 
         if (shebang.length() > 0) {
-          processBuilder = new ProcessBuilder(shebang,
-              pathToHookScript.toString())
+          processBuilder =
+            new ProcessBuilder(shebang, pathToHookScript.toString())
         } else {
           processBuilder = new ProcessBuilder(pathToHookScript.toString())
         }
@@ -75,27 +77,20 @@ object HookExecutor {
           environment.put("COMMIT_USERNAME", commitUserName)
           environment.put("PUSHER", pusher)
 
-          // Set the working directory the remote repository
+          // Set the working directory to the remote repository
           processBuilder.directory(new File(repositoryDir))
 
           val outputPath = Paths.get(hooksPath, "output")
           val outputFile = outputPath.toFile()
 
-          processBuilder.redirectError(outputFile)
-          processBuilder.redirectOutput(outputFile)
+          processBuilder.redirectErrorStream(true);
+          processBuilder.redirectOutput(outputFile);
 
-          val runner = processBuilder.start()
-
-          // Wait indefinitely for the process to finish
-          runner.waitFor()
-
-          exitValue = Some(runner.exitValue.toString())
+          processBuilder.start()
         }
       } catch {
         case e: Exception => e.printStackTrace()
       }
     }
-
-    return exitValue
   }
 }
