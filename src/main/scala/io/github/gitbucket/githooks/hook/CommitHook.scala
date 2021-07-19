@@ -16,21 +16,60 @@ import java.io.{File, FileReader, BufferedReader}
 import java.nio.file.{Files, Paths}
 
 import io.github.gitbucket.githook.helpers.HookExecutor
+import scala.concurrent.ExecutionContext
 
-/*
-
-    Tie into GitBucket's ReceiveHook class.
-
-    On post-receive, determine whether we need to execute the .git/hooks/post-receive hook.
-    The script will only execute if the ReceiveCommand.Result was successful (see http://download.eclipse.org/jgit/docs/jgit-2.0.0.201206130900-r/apidocs/org/eclipse/jgit/transport/ReceiveCommand.Result.html#OK)
-
- */
 class CommitHook
     extends ReceiveHook
     with RepositoryService
     with AccountService
     with CommitStatusService
     with SystemSettingsService {
+
+  override def preReceive(
+      owner: String,
+      repository: String,
+      receivePack: ReceivePack,
+      command: ReceiveCommand,
+      pusher: String,
+      mergePullRequest: Boolean
+  )(implicit
+      session: Session
+  ): Option[String] = {
+    implicit val ec: scala.concurrent.ExecutionContext =
+      scala.concurrent.ExecutionContext.global
+
+    val branch = command.getRefName.stripPrefix("refs/heads/")
+    val repositoryDir = getRepositoryDir(owner, repository)
+
+    if (
+      branch != command.getRefName && command.getType != ReceiveCommand.Type.DELETE
+    ) {
+      getRepository(owner, repository).foreach { repositoryInfo =>
+        Using.resource(Git.open(getRepositoryDir(owner, repository))) { git =>
+          val sha = command.getNewId.name
+          val revCommit = JGitUtil.getRevCommitFromId(git, command.getNewId)
+
+          val config = git.getRepository().getConfig()
+
+          HookExecutor.executeHook(
+            hook = "pre-receive",
+            owner = owner,
+            repositoryName = repository,
+            branchName = branch,
+            sha = sha,
+            commitMessage = revCommit.getShortMessage,
+            commitUserName = revCommit.getCommitterIdent.getName,
+            pusher = pusher,
+            repositoryDir = repositoryDir.getAbsolutePath().toString(),
+            config = config
+          )
+        }
+      }
+    }
+
+    return null
+  }
+
   override def postReceive(
       owner: String,
       repository: String,
@@ -39,6 +78,9 @@ class CommitHook
       pusher: String,
       mergePullRequest: Boolean
   )(implicit session: Session): Unit = {
+    implicit val ec: scala.concurrent.ExecutionContext =
+      scala.concurrent.ExecutionContext.global
+
     val branch = command.getRefName.stripPrefix("refs/heads/")
     val repositoryDir = getRepositoryDir(owner, repository)
 
