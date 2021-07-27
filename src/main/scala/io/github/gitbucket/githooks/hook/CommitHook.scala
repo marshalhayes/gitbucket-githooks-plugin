@@ -16,7 +16,6 @@ import java.io.{File, FileReader, BufferedReader}
 import java.nio.file.{Files, Paths}
 
 import io.github.gitbucket.githook.helpers.HookExecutor
-import scala.concurrent.ExecutionContext
 
 class CommitHook
     extends ReceiveHook
@@ -35,9 +34,6 @@ class CommitHook
   )(implicit
       session: Session
   ): Option[String] = {
-    implicit val ec: scala.concurrent.ExecutionContext =
-      scala.concurrent.ExecutionContext.global
-
     val branch = command.getRefName.stripPrefix("refs/heads/")
     val repositoryDir = getRepositoryDir(owner, repository)
 
@@ -51,7 +47,7 @@ class CommitHook
 
           val config = git.getRepository().getConfig()
 
-          HookExecutor.executeHook(
+          val completedHookProcess = HookExecutor.executeHook(
             hook = "pre-receive",
             owner = owner,
             repositoryName = repository,
@@ -63,11 +59,21 @@ class CommitHook
             repositoryDir = repositoryDir.getAbsolutePath().toString(),
             config = config
           )
+
+          if (completedHookProcess.exitValue() != 0) {
+            return Option(
+              scala.io.Source
+                .fromInputStream(completedHookProcess.getErrorStream())
+                .mkString
+            )
+          }
+
+          return None
         }
       }
     }
 
-    return null
+    return None
   }
 
   override def postReceive(

@@ -14,8 +14,6 @@ import profile.blockingApi._
 
 import java.io.{File, FileReader, BufferedReader}
 import java.nio.file.{Files, Paths}
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext
 import java.nio.file.Path
 
 object HookExecutor {
@@ -30,7 +28,7 @@ object HookExecutor {
       pusher: String,
       repositoryDir: String,
       config: org.eclipse.jgit.lib.Config
-  )(implicit executionContext: ExecutionContext): Future[Int] = {
+  ): Process = {
     val pathToHookScript =
       HookExecutor.getHooksPath(hook, repositoryDir, config)
 
@@ -73,11 +71,11 @@ object HookExecutor {
         .directory(new File(repositoryDir))
         .inheritIO()
 
-      return Future {
-        processBuilder
-          .start()
-          .waitFor()
-      }(executionContext)
+      val startedProcess = processBuilder.start()
+
+      startedProcess.waitFor()
+
+      startedProcess
     }
 
     return null
