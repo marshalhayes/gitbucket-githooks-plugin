@@ -72,10 +72,9 @@ object HookExecutor {
         .inheritIO()
 
       val startedProcess = processBuilder.start()
+      val exitValue = startedProcess.waitFor()
 
-      startedProcess.waitFor()
-
-      startedProcess
+      return startedProcess
     }
 
     return null
