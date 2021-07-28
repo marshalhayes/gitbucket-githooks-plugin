@@ -16,6 +16,10 @@ import java.io.{File, FileReader, BufferedReader}
 import java.nio.file.{Files, Paths}
 
 import io.github.gitbucket.githook.helpers.HookExecutor
+import scala.concurrent.Future
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+import scala.concurrent.ExecutionContext
 
 class CommitHook
     extends ReceiveHook
@@ -34,6 +38,9 @@ class CommitHook
   )(implicit
       session: Session
   ): Option[String] = {
+    implicit val ec: scala.concurrent.ExecutionContext =
+      scala.concurrent.ExecutionContext.global
+
     val branch = command.getRefName.stripPrefix("refs/heads/")
     val repositoryDir = getRepositoryDir(owner, repository)
 
@@ -61,11 +68,15 @@ class CommitHook
           )
 
           if (completedHookProcess.exitValue() != 0) {
-            return Option(
+            val getStderr = Future {
               scala.io.Source
                 .fromInputStream(completedHookProcess.getErrorStream())
                 .mkString
-            )
+            }
+
+            val stderr = Await.result(getStderr, Duration.Inf)
+
+            return Option(stderr)
           }
 
           return None
