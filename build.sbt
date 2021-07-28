@@ -1,6 +1,6 @@
 name := "gitbucket-githooks-plugin"
 organization := "io.github.gitbucket"
-version := "1.1.1"
+version := "1.1.2"
 scalaVersion := "2.13.5"
 gitbucketVersion := "4.35.3"
 
