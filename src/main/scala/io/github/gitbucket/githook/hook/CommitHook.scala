@@ -1,25 +1,16 @@
 package io.github.gitbucket.githook.hook
 
-import scala.util.Using
 import gitbucket.core.model.Profile._
 import gitbucket.core.plugin.ReceiveHook
+import gitbucket.core.service._
 import gitbucket.core.util.Directory.getRepositoryDir
 import gitbucket.core.util.JGitUtil
+import io.github.gitbucket.githook.helpers.HookExecutor
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.transport.{ReceiveCommand, ReceivePack}
-import profile.api._
-
-import gitbucket.core.service._
 import profile.blockingApi._
 
-import java.io.{File, FileReader, BufferedReader}
-import java.nio.file.{Files, Paths}
-
-import io.github.gitbucket.githook.helpers.HookExecutor
-import scala.concurrent.Future
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-import scala.concurrent.ExecutionContext
+import scala.util.Using
 
 class CommitHook
     extends ReceiveHook
@@ -44,17 +35,19 @@ class CommitHook
     val branch = command.getRefName.stripPrefix("refs/heads/")
     val repositoryDir = getRepositoryDir(owner, repository)
 
+    var output: Option[String] = None
+
     if (
       branch != command.getRefName && command.getType != ReceiveCommand.Type.DELETE
     ) {
-      getRepository(owner, repository).foreach { repositoryInfo =>
+      getRepository(owner, repository).foreach { _ =>
         Using.resource(Git.open(getRepositoryDir(owner, repository))) { git =>
           val sha = command.getNewId.name
           val revCommit = JGitUtil.getRevCommitFromId(git, command.getNewId)
 
-          val config = git.getRepository().getConfig()
+          val config = git.getRepository.getConfig
 
-          val completedHookProcess = HookExecutor.executeHook(
+          val (exitCode, stdout, stderr) = HookExecutor.executeHook(
             hook = "pre-receive",
             owner = owner,
             repositoryName = repository,
@@ -63,28 +56,21 @@ class CommitHook
             commitMessage = revCommit.getShortMessage,
             commitUserName = revCommit.getCommitterIdent.getName,
             pusher = pusher,
-            repositoryDir = repositoryDir.getAbsolutePath().toString(),
+            repositoryDir = repositoryDir.getAbsolutePath,
             config = config
           )
 
-          if (completedHookProcess.exitValue() != 0) {
-            val getStderr = Future {
-              scala.io.Source
-                .fromInputStream(completedHookProcess.getErrorStream())
-                .mkString
-            }
-
-            val stderr = Await.result(getStderr, Duration.Inf)
-
-            return Option(stderr)
+          if (exitCode != 0)
+          {
+            output = Option(stdout + stderr)
           }
 
-          return None
+          output = None
         }
       }
     }
 
-    return None
+    output
   }
 
   override def postReceive(
@@ -104,12 +90,12 @@ class CommitHook
     if (
       branch != command.getRefName && command.getType != ReceiveCommand.Type.DELETE
     ) {
-      getRepository(owner, repository).foreach { repositoryInfo =>
+      getRepository(owner, repository).foreach { _ =>
         Using.resource(Git.open(getRepositoryDir(owner, repository))) { git =>
           val sha = command.getNewId.name
           val revCommit = JGitUtil.getRevCommitFromId(git, command.getNewId)
 
-          val config = git.getRepository().getConfig()
+          val config = git.getRepository.getConfig
 
           HookExecutor.executeHook(
             hook = "post-receive",
@@ -120,7 +106,7 @@ class CommitHook
             commitMessage = revCommit.getShortMessage,
             commitUserName = revCommit.getCommitterIdent.getName,
             pusher = pusher,
-            repositoryDir = repositoryDir.getAbsolutePath().toString(),
+            repositoryDir = repositoryDir.getAbsolutePath,
             config = config
           )
         }
